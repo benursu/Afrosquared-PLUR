@@ -34,4 +34,4 @@ app.post('/receiveNotesParticles', function(request, respond) {
     });
 });
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+app.listen(port, () => console.log(`P.L.U.R Midi Export Tool listening on port ${port}!`));
