@@ -1,0 +1,402 @@
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>P.L.U.R Export Notes Tool</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	</head>
+	<body>
+		<div id="info">
+			<div id="settings"></div>
+			<button id="loadNotes">1. Load Notes</button>
+			<button id="exportNotes">2. Export Notes</button>
+			<button id="reload">3. Reload</button>
+			<button id="loadNotesParticles">4. Load Notes Particles</button>
+			<button id="exportNotesParticles">5. Export Notes Particles</button>
+			<div id="instructions">Open console to view details.</div>
+		</div>
+
+		<script type="module">
+
+
+			////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////  Settings
+			//create midi
+			//1. online midi sequencer for editing and troubleshooting: https://onlinesequencer.net/import
+			//2. convert midi to text (use TimestampType Absolute): http://flashmusicgames.com/midi/mid2txt.php
+
+			var midiLocation = 'midi/plur.txt';
+			var noteCubeSizeWidth = 90;
+			var noteCubeSizeDepth = 30;
+			var noteDurationFactor = 1;
+
+
+
+
+
+			////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////  Tool
+
+			settings = document.getElementById('settings');
+			settings.innerHTML = 'File: ' + midiLocation;
+
+			//threejs
+			import * as THREE from './build/three.module.js';
+			import { OBJExporter } from './jsm/exporters/OBJExporter.js';
+			import { ColladaExporter } from './jsm/exporters/ColladaExporter.js';
+			import { TrackballControls } from './jsm/controls/TrackballControls.js';
+
+			var camera, controls, scene, light, renderer;
+			var settings, loadNotesButton, loadNotesParticlesButton, exportNotesButton, exportNotesParticlesButton, reloadButton;
+			var mouseX = 0, mouseY = 0;
+
+			var material = new THREE.MeshLambertMaterial( { color: 0x00cc00 } );
+			var notes = [];
+			var notesTemp = {};
+			var tempo = 500000;
+			var tempoForDefaultMidi = 500000;
+
+				
+			function loadNotes() {
+
+				$.ajax({
+					url : midiLocation,
+					dataType: 'text',
+					success : function (data) {
+
+						//parse data
+						var noteStart = 131;
+						var noteEnd = 0;
+						var lineByLine = data.split("\n");
+						for(var i = 0; i < lineByLine.length; i++){
+							var lineData = lineByLine[i].split(' ');
+
+							if(lineData.length == 3){
+								var signal = lineData[1];
+								var tempoValue = lineData[2];
+								if(signal == 'Tempo'){
+									tempo = parseInt(tempoValue) / tempoForDefaultMidi;
+								}
+								
+							}
+
+							if(lineData.length == 5){
+								// console.log(lineData)
+								var timestamp = parseInt(lineData[0]) * tempo;
+								var signal = lineData[1];
+								var note = lineData[3];
+								var velocity = lineData[4];
+
+								if(signal == 'On' || signal == 'Off'){
+									var noteKey = note.split('=')[1];
+
+									if(noteKey < noteStart){
+										noteStart = noteKey;
+									}
+									if(noteKey > noteEnd){
+										noteEnd = noteKey;
+									}
+									
+									if(velocity.substring(0, 3) == 'v=0'){
+										//off
+										// console.log(timestamp)
+										if(notesTemp[noteKey] != undefined){
+											var duration = timestamp - notesTemp[noteKey].timestamp;
+											var noteData = { timestamp: parseInt(notesTemp[noteKey].timestamp), note: parseInt(noteKey), duration: duration };
+											notes.push(noteData);
+											
+											delete notesTemp[noteKey];
+
+										}
+
+
+									}else{
+										//on
+										var noteData = { timestamp: timestamp, note: noteKey };
+										notesTemp[noteKey] = noteData;									
+
+									}
+								}
+							}							
+
+						}
+						
+						//build notes
+						for(var i = 0; i < notes.length; i++){
+							var geometry = new THREE.BoxBufferGeometry( noteCubeSizeWidth, notes[i].duration * noteDurationFactor, noteCubeSizeDepth );
+							geometry.translate(0, (notes[i].duration/2) * noteDurationFactor, 0);
+							var mesh = new THREE.Mesh(geometry, material);
+							mesh.position.x = -(noteStart * noteCubeSizeWidth) + (notes[i].note * noteCubeSizeWidth);
+							mesh.position.y = notes[i].timestamp * noteDurationFactor;
+							scene.add(mesh);
+						}
+
+						console.log('success loading notes');
+
+					}
+				});
+
+			}
+
+			function loadNotesParticles() {
+
+				$.ajax({
+					url : midiLocation,
+					dataType: 'text',
+					success : function (data) {
+
+						//parse data
+						var noteStart = 131;
+						var noteEnd = 0;						
+						var trackLength = 0;
+						var lineByLine = data.split("\n");
+						for(var i = 0; i < lineByLine.length; i++){
+							var lineData = lineByLine[i].split(' ');
+
+							if(lineData.length == 3){
+								var signal = lineData[1];
+								var tempoValue = lineData[2];
+								if(signal == 'Tempo'){
+									tempo = parseInt(tempoValue) / tempoForDefaultMidi;
+								}
+								
+							}							
+
+							if(lineData.length == 5){
+								// console.log(lineData)							
+								var timestamp = parseInt(lineData[0]) * tempo;
+								var signal = lineData[1];
+								var note = lineData[3];
+								var velocity = lineData[4];
+
+								if(signal == 'On' || signal == 'Off'){
+									var noteKey = note.split('=')[1];
+
+									if(noteKey < noteStart){
+										noteStart = noteKey;
+									}
+									if(noteKey > noteEnd){
+										noteEnd = noteKey;
+									}								
+
+									if(velocity.substring(0, 3) == 'v=0'){
+										//off
+										if(notesTemp[noteKey] != undefined){
+											var duration = timestamp - notesTemp[noteKey].timestamp;
+											var noteData = { timestamp: parseInt(notesTemp[noteKey].timestamp), note: parseInt(noteKey), duration: duration };
+											notes.push(noteData);
+											delete notesTemp[noteKey];
+										}
+
+									}else{
+										//on
+										var noteData = { timestamp: timestamp, note: noteKey };
+										notesTemp[noteKey] = noteData;
+
+									}
+
+								}
+
+							}else if(lineData.length == 3){
+								var timestamp = parseInt(lineData[0]) * tempo;
+								var meta = lineData[1];
+								var trkEnd = lineData[2];				
+
+								if(meta == 'Meta' && trkEnd.substring(0, 6) == 'TrkEnd'){
+									trackLength = parseInt(timestamp);
+								}
+								
+							}
+
+						}
+						
+						//build notes particles
+						var notesArrayString = 'var notesKeys = [';
+						for(var i = 0; i < notes.length; i++){
+							notesArrayString += notes[i].note;
+							if(i < (notes.length-1)){
+								notesArrayString += ',';
+							}
+
+							var geometry = new THREE.PlaneBufferGeometry(1, 1);
+							var mesh = new THREE.Mesh(geometry, material);
+							mesh.name = 'NoteOn-' + i;
+							mesh.position.x = -(noteStart * noteCubeSizeWidth) + (notes[i].note * noteCubeSizeWidth);
+							mesh.position.y = notes[i].timestamp * noteDurationFactor;
+							scene.add(mesh);
+
+							var geometry = new THREE.PlaneBufferGeometry(1, 1);
+							var mesh = new THREE.Mesh(geometry, material);
+							mesh.name = 'NoteOff-' + i;
+							mesh.position.x = -(noteStart * noteCubeSizeWidth) + (notes[i].note * noteCubeSizeWidth);
+							mesh.position.y = (notes[i].timestamp + notes[i].duration) * noteDurationFactor;
+							scene.add(mesh);
+
+						}
+						notesArrayString += '];';
+
+						console.log('Following values should be used in Spark script.js:')
+						console.log('var notesStart = ' + noteStart + ';');
+						console.log('var notesEnd = ' + noteEnd + ';');
+						console.log('var notesTotal = ' + notes.length + ';');
+						// console.log('var notesDuration = ' + trackLength + ';');
+						
+						// console.log(notesArrayString);
+
+					}
+				});
+			}
+
+			function exportToNotes() {
+
+				var exporter = new OBJExporter();
+				var result = exporter.parse( scene );
+
+				$.ajax({
+					url: '/receiveNotes',
+					data: result,
+					cache: false,
+					contentType: false,
+					processData: false,
+					method: 'POST',
+					type: 'POST',
+					success: function(data){
+						console.log('success creating notes.obj');
+					}
+				});				
+
+			}
+
+			function exportToNotesParticles() {
+
+				var exporter = new ColladaExporter();
+				var result = exporter.parse( scene );
+
+				$.ajax({
+					url: '/receiveNotesParticles',
+					data: result.data,
+					cache: false,
+					contentType: false,
+					processData: false,
+					method: 'POST',
+					type: 'POST',
+					success: function(data){
+						console.log('success creating notesParticles.dae');
+					}
+				});				
+
+			}			
+
+			function init() {
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 100000 );
+				camera.position.set( 0, 0, 2000 );
+
+				controls = new TrackballControls( camera, renderer.domElement );
+				controls.rotateSpeed = 1.0;
+				controls.zoomSpeed = 1.2;
+				controls.panSpeed = 0.8;				
+
+				scene = new THREE.Scene();
+
+				light = new THREE.DirectionalLight( 0xffffff );
+				scene.add( light );
+
+				window.addEventListener( 'resize', onWindowResize, false );
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.addEventListener( 'mouseover', onDocumentMouseMove, false );
+
+				loadNotesButton = document.getElementById('loadNotes');
+				loadNotesButton.addEventListener( 'click', function () {
+					loadNotes();
+				} );
+				
+				loadNotesParticlesButton = document.getElementById('loadNotesParticles');
+				loadNotesParticlesButton.addEventListener( 'click', function () {
+					loadNotesParticles();
+				} );
+
+				exportNotesButton = document.getElementById('exportNotes');
+				exportNotesButton.addEventListener( 'click', function () {
+					exportToNotes();
+				} );
+
+				exportNotesParticlesButton = document.getElementById('exportNotesParticles');
+				exportNotesParticlesButton.addEventListener( 'click', function () {
+					exportToNotesParticles();
+				} );
+
+				reloadButton = document.getElementById('reload');
+				reloadButton.addEventListener( 'click', function () {
+					location.reload();
+				} );				
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function onDocumentMouseMove( event ) {
+
+				var windowHalfX = window.innerWidth / 2;
+				var windowHalfY = window.innerHeight / 2;
+				mouseX = ( event.clientX - windowHalfX ) / 2;
+				mouseY = ( event.clientY - windowHalfY ) / 2;
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				controls.update();
+
+				light.position.set( camera.position.x, camera.position.y, camera.position.z ).normalize();
+				renderer.render( scene, camera );
+
+			}
+
+			function generateTriangleGeometry() {
+
+				var geometry = new THREE.BufferGeometry();
+				var vertices = [];
+
+				vertices.push( - 50, - 50, 0 );
+				vertices.push( 50, - 50, 0 );
+				vertices.push( 50, 50, 0 );
+
+				geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+				geometry.computeVertexNormals();
+
+				return geometry;
+
+			}
+
+			init();
+			animate();
+
+
+		</script>
+
+	</body>
+</html>

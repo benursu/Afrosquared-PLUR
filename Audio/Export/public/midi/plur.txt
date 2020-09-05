@@ -1,0 +1,71 @@
+MFile 1 2 384
+MTrk
+0 TimeSig 4/4 24 8
+0 Tempo 468750
+0 Meta TrkEnd
+TrkEnd
+MTrk
+0 Meta TrkName "Electric Piano"
+0 PrCh ch=1 p=0
+6144 On ch=1 n=65 v=50
+7488 Off ch=1 n=65 v=0
+7872 On ch=1 n=68 v=50
+8352 Off ch=1 n=68 v=0
+8640 On ch=1 n=70 v=50
+8928 Off ch=1 n=70 v=0
+8928 On ch=1 n=68 v=50
+9120 Off ch=1 n=68 v=0
+9120 On ch=1 n=65 v=50
+10560 Off ch=1 n=65 v=0
+10944 On ch=1 n=77 v=50
+11424 Off ch=1 n=77 v=0
+11712 On ch=1 n=79 v=50
+12000 Off ch=1 n=79 v=0
+12000 On ch=1 n=77 v=50
+12192 Off ch=1 n=77 v=0
+12192 On ch=1 n=74 v=50
+13632 Off ch=1 n=74 v=0
+14016 On ch=1 n=60 v=50
+14496 Off ch=1 n=60 v=0
+14784 On ch=1 n=62 v=50
+15072 Off ch=1 n=62 v=0
+15072 On ch=1 n=60 v=50
+15264 Off ch=1 n=60 v=0
+15264 On ch=1 n=57 v=50
+16704 Off ch=1 n=57 v=0
+17088 On ch=1 n=59 v=50
+17472 Off ch=1 n=59 v=0
+17472 On ch=1 n=64 v=50
+17856 Off ch=1 n=64 v=0
+17856 On ch=1 n=69 v=50
+18144 Off ch=1 n=69 v=0
+18144 On ch=1 n=74 v=50
+18432 Off ch=1 n=74 v=0
+18432 On ch=1 n=62 v=50
+18432 On ch=1 n=62 v=50
+19872 Off ch=1 n=62 v=0
+19968 Off ch=1 n=62 v=0
+19968 On ch=1 n=65 v=50
+21408 Off ch=1 n=65 v=0
+21504 On ch=1 n=55 v=50
+23808 Off ch=1 n=55 v=0
+23808 On ch=1 n=65 v=50
+24192 Off ch=1 n=65 v=0
+24192 On ch=1 n=72 v=50
+24576 Off ch=1 n=72 v=0
+24576 On ch=1 n=62 v=50
+26016 Off ch=1 n=62 v=0
+26112 On ch=1 n=65 v=50
+27552 Off ch=1 n=65 v=0
+27648 On ch=1 n=53 v=50
+29184 Off ch=1 n=53 v=0
+29184 On ch=1 n=67 v=50
+29568 Off ch=1 n=67 v=0
+29568 On ch=1 n=72 v=50
+29952 Off ch=1 n=72 v=0
+29952 On ch=1 n=62 v=50
+30336 Off ch=1 n=62 v=0
+30336 On ch=1 n=72 v=50
+30720 Off ch=1 n=72 v=0
+30720 Meta TrkEnd
+TrkEnd
